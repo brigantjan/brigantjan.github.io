@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="app-version" content="portal-v1">
+<title>SUPTel portál</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect x='1' y='1' width='42' height='42' rx='10' fill='%230b1f3a'/%3E%3Cpath d='M13 27c0 3 3.5 5 8 5s8-2 8-5-3-4-8-5-8-2-8-5 3.5-5 8-5 8 2 8 5' fill='none' stroke='%235eead4' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<style>
+:root{
+  --navy:#0b1f3a; --blue:#1d4ed8; --blue-d:#1e3a8a; --teal:#5eead4;
+  --bg:#f4f6f9; --card:#ffffff; --line:#e2e8f0; --line-2:#cbd5e1;
+  --ink:#0f172a; --ink-2:#334155; --muted:#475569; --muted-2:#64748b;
+  --ok:#166534; --ok-bg:#e8f7ee; --warn:#92400e; --warn-bg:#fdf3e1; --err:#b91c1c; --err-bg:#fdecec;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px}
+a{color:var(--blue)} a:hover{color:var(--blue-d)}
+button{font-family:inherit}
+.hidden{display:none!important}
+.brand{font-family:"Space Grotesk",Inter,sans-serif}
+/* ── Prihlásenie ── */
+#v-login{min-height:100vh;display:flex;flex-wrap:wrap}
+.login-hero{flex:1 1 520px;min-height:100vh;background:var(--navy);color:#fff;padding:56px 64px;display:flex;flex-direction:column;justify-content:space-between}
+.login-hero .logo{display:flex;align-items:center;gap:14px}
+.login-hero h1{margin:0 0 20px;font-family:"Space Grotesk",Inter,sans-serif;font-size:44px;line-height:1.1;font-weight:600;max-width:520px}
+.login-hero p{margin:0;font-size:17px;line-height:1.6;color:#c3d1e3;max-width:520px}
+.bul{display:flex;align-items:center;gap:12px;font-size:15px;color:#dbe5f1;margin-top:14px}
+.login-side{flex:1 1 440px;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 20px}
+.login-card{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:36px;box-shadow:0 12px 40px rgba(15,23,42,.08)}
+.login-card h2{margin:0 0 6px;font-family:"Space Grotesk",Inter,sans-serif;font-size:26px;font-weight:600}
+label.f{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin:0 0 6px}
+input.in,select.in{width:100%;height:44px;border:1px solid var(--line-2);border-radius:10px;padding:0 13px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink)}
+input.in:focus,select.in:focus{outline:2px solid #93b4f5;outline-offset:0;border-color:var(--blue)}
+.btn{height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink-2);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.btn:hover{border-color:#93b4f5}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.pri:hover{background:var(--blue-d)}
+.btn.pri:disabled{opacity:.6;cursor:wait}
+.btn.sm{height:32px;padding:0 10px;font-size:13px}
+.btn.danger{color:var(--err)}
+.msg{border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;margin:0 0 16px}
+.msg.err{background:var(--err-bg);color:var(--err);border:1px solid #f5c2c2}
+.msg.ok{background:var(--ok-bg);color:var(--ok);border:1px solid #bbe5cb}
+.msg.info{background:#eef4ff;color:var(--blue-d);border:1px solid #c7d8fb}
+/* ── Portál ── */
+header.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.top-in{max-width:1280px;margin:0 auto;padding:12px 32px;display:flex;flex-wrap:wrap;align-items:center;gap:18px}
+.logo-s{display:flex;align-items:center;gap:12px}
+.search{flex:1 1 260px;max-width:420px;display:flex;align-items:center;gap:10px;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 14px;background:#f8fafc;color:var(--muted-2)}
+.search input{border:0;background:transparent;outline:none;font-size:14px;font-family:inherit;flex:1;min-width:0;color:var(--ink)}
+.who{margin-left:auto;display:flex;align-items:center;gap:12px;position:relative}
+.avatar{width:40px;height:40px;border-radius:50%;background:#dbe7fe;color:var(--blue-d);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border:0;cursor:pointer}
+.menu{position:absolute;right:0;top:50px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.12);min-width:220px;padding:6px;z-index:10}
+.menu button{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--ink-2);cursor:pointer}
+.menu button:hover{background:#f1f5f9}
+main.wrap{max-width:1280px;margin:0 auto;padding:36px 32px 56px}
+.hello{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:32px}
+.hello h1{margin:0;font-family:"Space Grotesk",Inter,sans-serif;font-size:32px;font-weight:600}
+h2.grp{margin:0 0 14px;font-size:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+h2.grp span{font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted-2)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-bottom:38px}
+a.tile{display:flex;flex-direction:column;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;text-decoration:none;color:inherit;min-height:184px;transition:border-color .15s,box-shadow .15s,transform .15s}
+a.tile:hover,a.tile:focus-visible{border-color:#93b4f5;box-shadow:0 10px 28px rgba(15,23,42,.08);transform:translateY(-1px);outline:none}
+a.tile.test{border-style:dashed;border-color:#e9c48a}
+a.tile.row{flex-direction:row;align-items:center;min-height:0;padding:18px 20px;gap:16px}
+.ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.row .ico{width:42px;height:42px;border-radius:10px}
+.c-blue{background:#e6eefe;color:#1d4ed8}.c-teal{background:#e3f6f3;color:#0f766e}.c-amber{background:#fdf0e3;color:#b45309}
+.c-violet{background:#eceafd;color:#5b21b6}.c-slate{background:#f1f5f9;color:#0f172a}
+.tag{font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px}
+.tag.PROD{color:var(--ok);background:var(--ok-bg)}.tag.DEV{color:var(--warn);background:var(--warn-bg)}.tag.other{color:#5b21b6;background:#eceafd}
+.t-name{font-size:17px;font-weight:600;margin-bottom:4px}
+.t-desc{font-size:14px;line-height:1.5;color:var(--muted)}
+.t-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.t-foot b{color:var(--blue);font-weight:600}
+.empty{background:#fff;border:1px dashed var(--line-2);border-radius:14px;padding:28px;color:var(--muted);font-size:15px;line-height:1.6;max-width:720px}
+footer.foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted-2)}
+/* ── Modály ── */
+.ov{position:fixed;inset:0;background:rgba(11,31,58,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow:auto}
+.dlg{background:#fff;border-radius:16px;width:100%;max-width:460px;padding:28px;box-shadow:0 24px 60px rgba(15,23,42,.25)}
+.dlg.big{max-width:1180px}
+.dlg h3{margin:0 0 6px;font-family:"Space Grotesk",Inter,sans-serif;font-size:22px;font-weight:600}
+.dlg .sub{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.5}
+.dlg-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:8px 0 18px}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs button.on{color:var(--blue);border-bottom-color:var(--blue)}
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t th{background:#f8fafc;text-align:left;font-weight:600;color:var(--muted);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0}
+table.t td{padding:8px 10px;border-bottom:1px solid #eef2f6;vertical-align:middle}
+table.t tr:last-child td{border-bottom:0}
+table.t th.ap{writing-mode:vertical-rl;transform:rotate(180deg);height:120px;vertical-align:bottom;padding:8px 6px;text-align:left}
+table.t td.ap{text-align:center}
+table.t input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--blue)}
+table.t input.in{height:34px;font-size:13px;padding:0 8px;border-radius:8px}
+table.t select.in{height:34px;font-size:13px;padding:0 6px;border-radius:8px;min-width:130px}
+.muted{color:var(--muted-2)}
+.off td{opacity:.55}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:end;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:16px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;z-index:99;box-shadow:0 12px 30px rgba(0,0,0,.25);max-width:92vw}
+.toast.err{background:var(--err)}
+@media (max-width:720px){
+  .login-hero{min-height:auto;padding:36px 24px}
+  .login-hero h1{font-size:32px}
+  .login-side{min-height:auto}
+  .top-in,main.wrap{padding-left:16px;padding-right:16px}
+  .who .nm{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Prihlásenie ═══ -->
+<div id="v-login" class="hidden">
+  <section class="login-hero">
+    <div class="logo">
+      <svg width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="SUPTel"><rect x="1" y="1" width="42" height="42" rx="10" fill="none" stroke="#5eead4" stroke-width="2"/><path d="M13 27c0 3 3.5 5 8 5s8-2 8-5-3-4-8-5-8-2-8-5 3.5-5 8-5 8 2 8 5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
+      <div class="brand" style="font-size:24px;font-weight:700;letter-spacing:.5px">SUPTel</div>
+      <div style="font-size:13px;color:#9fb3cc;border-left:1px solid #2a4366;padding-left:14px">Interný portál</div>
+    </div>
+    <div>
+      <h1>Všetky firemné aplikácie na jednom mieste.</h1>
+      <p>Prihláste sa raz a otvorte aplikácie, ku ktorým máte prístup.</p>
+      <div style="margin-top:34px">
+        <div class="bul"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Jedno prihlásenie – SUPTel účet</div>
+        <div class="bul"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Vidíte len aplikácie, ku ktorým máte oprávnenie</div>
+        <div class="bul"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Aplikácie fungujú aj samostatne, ako doteraz</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:#7f95b3">© <span class="rok"></span> SUPTel s.r.o. · Len pre zamestnancov</div>
+  </section>
+  <section class="login-side">
+    <form class="login-card" id="f-login" autocomplete="on" novalidate>
+      <h2>Prihlásenie</h2>
+      <p style="margin:0 0 24px;font-size:14px;color:var(--muted)">Použite svoj SUPTel účet.</p>
+      <div id="login-msg"></div>
+      <label class="f" for="l-email">E-mail</label>
+      <input class="in" id="l-email" type="email" autocomplete="username" placeholder="meno@suptel.sk" required style="margin-bottom:16px">
+      <label class="f" for="l-heslo">Heslo</label>
+      <input class="in" id="l-heslo" type="password" autocomplete="current-password" required>
+      <div style="display:flex;justify-content:flex-end;margin:12px 0 22px;font-size:13px">
+        <a href="#" id="a-zabudnute">Zabudnuté heslo?</a>
+      </div>
+      <button class="btn pri" id="b-login" type="submit" style="width:100%;height:48px;font-size:15px">Prihlásiť sa</button>
+      <div style="display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--muted-2);font-size:12px"><div style="flex:1;height:1px;background:var(--line)"></div>neskôr<div style="flex:1;height:1px;background:var(--line)"></div></div>
+      <button type="button" disabled class="btn" style="width:100%;height:44px;border-style:dashed;background:#f8fafc;color:var(--muted-2);font-weight:500">Prihlásiť sa firemným účtom (Google / Microsoft)</button>
+    </form>
+  </section>
+</div>
+
+<!-- ═══ Portál ═══ -->
+<div id="v-portal" class="hidden">
+  <header class="top">
+    <div class="top-in">
+      <div class="logo-s">
+        <svg width="36" height="36" viewBox="0 0 44 44" role="img" aria-label="SUPTel"><rect x="1" y="1" width="42" height="42" rx="10" fill="#0b1f3a"/><path d="M13 27c0 3 3.5 5 8 5s8-2 8-5-3-4-8-5-8-2-8-5 3.5-5 8-5 8 2 8 5" fill="none" stroke="#5eead4" stroke-width="2.8" stroke-linecap="round"/></svg>
+        <div class="brand" style="font-size:20px;font-weight:700">SUPTel</div>
+        <div style="font-size:13px;color:var(--muted-2);border-left:1px solid var(--line);padding-left:12px">Portál</div>
+      </div>
+      <label class="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="q" placeholder="Hľadať aplikáciu…" aria-label="Hľadať aplikáciu">
+      </label>
+      <div class="who">
+        <button class="btn sm hidden" id="b-sprava" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
+          Správa portálu
+        </button>
+        <div class="nm" style="text-align:right">
+          <div id="u-meno" style="font-size:14px;font-weight:600"></div>
+          <div id="u-info" style="font-size:12px;color:var(--muted)"></div>
+        </div>
+        <button class="avatar" id="b-avatar" type="button" aria-haspopup="true" aria-expanded="false" title="Môj účet"></button>
+        <div class="menu hidden" id="m-ucet" role="menu">
+          <button type="button" id="b-heslo" role="menuitem">Zmeniť heslo</button>
+          <button type="button" id="b-odhlas" role="menuitem">Odhlásiť sa</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="hello">
+      <div>
+        <div id="dnes" style="font-size:13px;color:var(--muted-2);margin-bottom:6px"></div>
+        <h1 id="pozdrav">Dobrý deň</h1>
+      </div>
+    </div>
+    <div id="tiles"></div>
+    <footer class="foot">
+      <span>Chýba vám aplikácia? Požiadajte správcu systému o prístup.</span>
+      <span>© <span class="rok"></span> SUPTel s.r.o. · Interný portál</span>
+    </footer>
+  </main>
+</div>
+
+<!-- ═══ Bez prístupu ═══ -->
+<div id="v-noaccess" class="hidden" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div class="login-card" style="max-width:460px">
+    <h2>Bez prístupu do portálu</h2>
+    <p style="color:var(--muted);line-height:1.6;margin:8px 0 22px" id="na-text">Váš SUPTel účet zatiaľ nemá prístup do portálu. Požiadajte správcu systému o pridelenie prístupu.</p>
+    <button class="btn pri" type="button" id="b-na-odhlas" style="width:100%">Odhlásiť sa</button>
+  </div>
+</div>
+
+<!-- ═══ Modál: zmena hesla ═══ -->
+<div class="ov hidden" id="d-heslo" role="dialog" aria-modal="true" aria-labelledby="dh-t">
+  <form class="dlg" id="f-heslo" novalidate>
+    <h3 id="dh-t">Zmeniť heslo</h3>
+    <p class="sub">Heslo SUPTel účtu platí aj pre Objednávky a Diéty.</p>
+    <div id="dh-msg"></div>
+    <label class="f" for="dh-1">Nové heslo (aspoň 8 znakov)</label>
+    <input class="in" id="dh-1" type="password" autocomplete="new-password" style="margin-bottom:14px">
+    <label class="f" for="dh-2">Nové heslo znova</label>
+    <input class="in" id="dh-2" type="password" autocomplete="new-password">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
+      <button class="btn" type="button" data-close="d-heslo">Zrušiť</button>
+      <button class="btn pri" type="submit" id="dh-ok">Uložiť heslo</button>
+    </div>
+  </form>
+</div>
+
+<!-- ═══ Modál: Správa portálu ═══ -->
+<div class="ov hidden" id="d-sprava" role="dialog" aria-modal="true" aria-labelledby="ds-t">
+  <div class="dlg big">
+    <div class="dlg-head">
+      <div>
+        <h3 id="ds-t">Správa portálu</h3>
+        <p class="sub" style="margin:0">Kto sa prihlási do portálu a ktoré dlaždice uvidí. Zmeny sa ukladajú hneď.</p>
+      </div>
+      <button class="btn sm" type="button" data-close="d-sprava">Zavrieť</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="on" data-tab="t-pouz" role="tab">Používatelia</button>
+      <button type="button" data-tab="t-apps" role="tab">Dlaždice</button>
+    </div>
+    <div id="ds-msg"></div>
+    <section id="t-pouz">
+      <form class="form-grid" id="f-novy" novalidate>
+        <div><label class="f" for="n-email">E-mail *</label><input class="in" id="n-email" type="email" placeholder="meno@suptel.sk"></div>
+        <div><label class="f" for="n-meno">Meno a priezvisko *</label><input class="in" id="n-meno"></div>
+        <div><label class="f" for="n-funkcia">Funkcia</label><input class="in" id="n-funkcia" placeholder="napr. Vedúci strediska"></div>
+        <div><label class="f" for="n-stredisko">Stredisko</label><input class="in" id="n-stredisko" placeholder="napr. Žilina"></div>
+        <div><label class="f" for="n-heslo">Heslo (nový účet)</label><input class="in" id="n-heslo" type="text" autocomplete="off" placeholder="aspoň 8 znakov"></div>
+        <div><button class="btn pri" type="submit" id="n-ok" style="width:100%;height:44px">Pridať používateľa</button></div>
+        <div style="grid-column:1/-1;font-size:12px;color:var(--muted-2);line-height:1.5">Ak už má človek SUPTel účet (napr. z Objednávok), heslo nevypĺňajte – účet sa len pripojí k portálu a heslo zostane jeho.</div>
+      </form>
+      <div class="tbl-wrap"><table class="t" id="tb-pouz"></table></div>
+    </section>
+    <section id="t-apps" class="hidden">
+      <form class="form-grid" id="f-app" novalidate>
+        <div><label class="f" for="a-kod">Kód *</label><input class="in" id="a-kod" placeholder="napr. sklad" maxlength="30"></div>
+        <div><label class="f" for="a-nazov">Názov *</label><input class="in" id="a-nazov"></div>
+        <div style="grid-column:span 2"><label class="f" for="a-url">Adresa (https://…) *</label><input class="in" id="a-url" type="url"></div>
+        <div><label class="f" for="a-skupina">Skupina</label><select class="in" id="a-skupina"><option value="app">Aplikácie</option><option value="test">Testovacie prostredie</option><option value="infra">Infraštruktúra</option></select></div>
+        <div><button class="btn pri" type="submit" id="a-ok" style="width:100%;height:44px">Pridať dlaždicu</button></div>
+      </form>
+      <div class="tbl-wrap"><table class="t" id="tb-apps"></table></div>
+    </section>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+// ─────────────────────────────────────────────────────────────────────
+// SUPTel portál v1 – prihlásenie SUPTel účtom (Supabase Auth),
+// dlaždice podľa oprávnení (schéma portal), správa pre správcu.
+// Konfigurácia (adresa a verejný kľúč) je v config.js.
+// ─────────────────────────────────────────────────────────────────────
+const CFG = window.PORTAL_CONFIG || {};
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl = (u) => /^https:\/\/[^\s"'<>]+$/i.test(String(u || '')) ? String(u) : '#';
+
+const ICONS = {
+  calendar:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/>',
+  doc:'<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h5"/>',
+  car:'<path d="M3 17h2l2-5h10l2 5h2"/><circle cx="7.5" cy="18" r="2"/><circle cx="16.5" cy="18" r="2"/><path d="M8 12l1.5-4h5L16 12"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+  flask:'<path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7 15h10"/>',
+  code:'<path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
+  db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  server:'<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+  box:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  app:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'
+};
+const ico = (k, s = 24) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k] || ICONS.app}</svg>`;
+const FARBY = ['blue','teal','amber','violet','slate'];
+const SKUPINY = { app:'Aplikácie', test:'Testovacie prostredie', infra:'Infraštruktúra' };
+
+const S = { sb:null, session:null, me:null, apps:[], all:{ users:[], apps:[], pristupy:[] } };
+
+// ── pomocné UI ──
+let toastT = null;
+function toast(t, err = false) {
+  const el = $('toast'); el.textContent = t; el.className = 'toast' + (err ? ' err' : '');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.add('hidden'), err ? 6000 : 3000);
+}
+function msg(boxId, text, kind = 'err') { $(boxId).innerHTML = text ? `<div class="msg ${kind}">${esc(text)}</div>` : ''; }
+function show(view) { ['v-login','v-portal','v-noaccess'].forEach((v) => $(v).classList.toggle('hidden', v !== view)); }
+function openDlg(id) { $(id).classList.remove('hidden'); const f = $(id).querySelector('input,button.btn'); if (f) f.focus(); }
+function closeDlg(id) { $(id).classList.add('hidden'); }
+document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => closeDlg(b.dataset.close)));
+document.querySelectorAll('.ov').forEach((o) => o.addEventListener('mousedown', (e) => { if (e.target === o) closeDlg(o.id); }));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { document.querySelectorAll('.ov:not(.hidden)').forEach((o) => closeDlg(o.id)); $('m-ucet').classList.add('hidden'); }
+});
+document.querySelectorAll('.rok').forEach((e) => e.textContent = new Date().getFullYear());
+
+function chybaSk(e) {
+  const m = String(e?.message || e || '');
+  if (/invalid login credentials/i.test(m)) return 'Nesprávny e-mail alebo heslo.';
+  if (/email not confirmed/i.test(m)) return 'Účet ešte nie je potvrdený. Kontaktujte správcu.';
+  if (/failed to fetch|network/i.test(m)) return 'Server je nedostupný. Skontrolujte pripojenie a skúste znova.';
+  if (/password should be|weak/i.test(m)) return 'Heslo je príliš slabé – použite aspoň 8 znakov.';
+  if (/same.*password|different from the old/i.test(m)) return 'Nové heslo musí byť iné ako doterajšie.';
+  if (/jwt|token|session/i.test(m)) return 'Prihlásenie vypršalo. Prihláste sa znova.';
+  return m || 'Neznáma chyba';
+}
+
+// ── štart ──
+async function init() {
+  if (!CFG.SUPABASE_URL || !CFG.SUPABASE_KEY || !window.supabase) {
+    show('v-login'); msg('login-msg', 'Portál nie je nastavený (chýba config.js).'); $('b-login').disabled = true; return;
+  }
+  S.sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY, { db: { schema: 'portal' } });
+  const { data } = await S.sb.auth.getSession();
+  if (data?.session) await poPrihlaseni(data.session, false);
+  else show('v-login');
+  S.sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') { S.session = null; S.me = null; show('v-login'); } });
+}
+
+$('f-login').addEventListener('submit', async (e) => {
+  e.preventDefault(); msg('login-msg', '');
+  const email = $('l-email').value.trim(), heslo = $('l-heslo').value;
+  if (!email || !heslo) { msg('login-msg', 'Vyplňte e-mail aj heslo.'); return; }
+  const b = $('b-login'); b.disabled = true; b.textContent = 'Prihlasujem…';
+  try {
+    const { data, error } = await S.sb.auth.signInWithPassword({ email, password: heslo });
+    if (error) throw error;
+    $('l-heslo').value = '';
+    await poPrihlaseni(data.session, true);
+  } catch (err) { msg('login-msg', chybaSk(err)); }
+  finally { b.disabled = false; b.textContent = 'Prihlásiť sa'; }
+});
+$('a-zabudnute').addEventListener('click', (e) => {
+  e.preventDefault(); msg('login-msg', 'Nové heslo vám nastaví správca systému. Kontaktujte ho e-mailom alebo telefonicky.', 'info');
+});
+
+async function poPrihlaseni(session, novePrihlasenie) {
+  S.session = session;
+  const uid = session.user.id;
+  const { data: me, error } = await S.sb.from('pouzivatelia').select('*').eq('user_id', uid).maybeSingle();
+  if (error) { show('v-login'); msg('login-msg', chybaSk(error)); return; }
+  if (!me || !me.aktivny) {
+    $('na-text').textContent = me ? 'Váš prístup do portálu je vypnutý. Ak ide o omyl, kontaktujte správcu systému.'
+                                  : 'Váš SUPTel účet zatiaľ nemá prístup do portálu. Požiadajte správcu systému o pridelenie prístupu.';
+    show('v-noaccess'); return;
+  }
+  S.me = me;
+  if (novePrihlasenie) S.sb.rpc('zaznam_prihlasenia').then(() => {}, () => {});
+  await nacitajDlazdice();
+  vykresliHlavicku();
+  show('v-portal');
+}
+
+async function nacitajDlazdice() {
+  const { data, error } = await S.sb.from('aplikacie').select('*').eq('aktivna', true).order('poradie').order('nazov');
+  if (error) { toast(chybaSk(error), true); S.apps = []; } else S.apps = data || [];
+  vykresliDlazdice();
+}
+
+function vykresliHlavicku() {
+  const me = S.me;
+  $('u-meno').textContent = me.meno;
+  $('u-info').textContent = [me.je_spravca ? 'Správca systému' : me.funkcia, me.stredisko].filter(Boolean).join(' · ');
+  $('b-avatar').textContent = me.meno.split(/\s+/).filter(Boolean).map((x) => x[0]).slice(0, 2).join('').toUpperCase();
+  $('b-sprava').classList.toggle('hidden', !me.je_spravca);
+  const d = new Date();
+  const dni = ['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'];
+  const mes = ['januára','februára','marca','apríla','mája','júna','júla','augusta','septembra','októbra','novembra','decembra'];
+  const den = dni[d.getDay()];
+  $('dnes').textContent = `${den[0].toUpperCase()}${den.slice(1)} ${d.getDate()}. ${mes[d.getMonth()]} ${d.getFullYear()}`;
+  const h = d.getHours(); const krstne = me.meno.split(/\s+/)[0];
+  $('pozdrav').textContent = `${h < 10 && h >= 4 ? 'Dobré ráno' : h >= 18 ? 'Dobrý večer' : 'Dobrý deň'}, ${krstne}`;
+}
+
+function vykresliDlazdice() {
+  const q = $('q').value.trim().toLowerCase();
+  const apps = S.apps.filter((a) => !q || (a.nazov + ' ' + (a.popis || '')).toLowerCase().includes(q));
+  const out = [];
+  for (const sk of ['app','test','infra']) {
+    const g = apps.filter((a) => a.skupina === sk);
+    if (!g.length) continue;
+    const pozn = sk === 'infra' && S.me.je_spravca ? ' <span>· vidí len správca</span>' : '';
+    out.push(`<h2 class="grp">${esc(SKUPINY[sk])}${pozn}</h2><div class="grid">${g.map(dlazdica).join('')}</div>`);
+  }
+  if (!out.length) {
+    out.push(q ? `<div class="empty">Nič sa nenašlo pre „${esc(q)}“.</div>`
+               : `<div class="empty"><b>Zatiaľ nemáte pridelenú žiadnu aplikáciu.</b><br>Požiadajte správcu systému o prístup.</div>`);
+  }
+  $('tiles').innerHTML = out.join('');
+}
+
+function dlazdica(a) {
+  const farba = FARBY.includes(a.farba) ? a.farba : 'blue';
+  const tagCls = a.stitok === 'PROD' ? 'PROD' : a.stitok === 'DEV' ? 'DEV' : 'other';
+  const tag = a.stitok ? `<span class="tag ${tagCls}">${esc(a.stitok)}</span>` : '';
+  const url = safeUrl(a.url);
+  if (a.skupina === 'infra') {
+    return `<a class="tile row" href="${esc(url)}" target="_blank" rel="noopener" data-kod="${esc(a.kod)}">
+      <div class="ico c-${farba}">${ico(a.ikona, 22)}</div>
+      <div style="flex:1;min-width:0"><div class="t-name" style="font-size:15px;margin:0">${esc(a.nazov)}</div><div class="t-desc" style="font-size:13px">${esc(a.popis)}</div></div>
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a>`;
+  }
+  const foot = a.prihlasenie === 'sso' ? 'Bez ďalšieho prihlásenia' : 'Vlastné prihlásenie';
+  return `<a class="tile${a.skupina === 'test' ? ' test' : ''}" href="${esc(url)}" target="_blank" rel="noopener" data-kod="${esc(a.kod)}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="ico c-${farba}">${ico(a.ikona)}</div>${tag}</div>
+    <div><div class="t-name">${esc(a.nazov)}</div><div class="t-desc">${esc(a.popis)}</div></div>
+    <div class="t-foot"><span>${foot}</span><b>Otvoriť →</b></div></a>`;
+}
+$('q').addEventListener('input', vykresliDlazdice);
+
+// ── účet: menu, heslo, odhlásenie ──
+$('b-avatar').addEventListener('click', (e) => {
+  e.stopPropagation(); const m = $('m-ucet'); m.classList.toggle('hidden');
+  $('b-avatar').setAttribute('aria-expanded', String(!m.classList.contains('hidden')));
+});
+document.addEventListener('click', (e) => { if (!$('m-ucet').contains(e.target)) $('m-ucet').classList.add('hidden'); });
+async function odhlas() { try { await S.sb.auth.signOut(); } catch (_) {} S.session = null; S.me = null; show('v-login'); }
+$('b-odhlas').addEventListener('click', odhlas);
+$('b-na-odhlas').addEventListener('click', odhlas);
+$('b-heslo').addEventListener('click', () => { $('m-ucet').classList.add('hidden'); $('dh-1').value = ''; $('dh-2').value = ''; msg('dh-msg', ''); openDlg('d-heslo'); });
+$('f-heslo').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const a = $('dh-1').value, b = $('dh-2').value;
+  if (a.length < 8) { msg('dh-msg', 'Heslo musí mať aspoň 8 znakov.'); return; }
+  if (a !== b) { msg('dh-msg', 'Heslá sa nezhodujú.'); return; }
+  const btn = $('dh-ok'); btn.disabled = true;
+  try {
+    const { error } = await S.sb.auth.updateUser({ password: a });
+    if (error) throw error;
+    closeDlg('d-heslo'); toast('Heslo bolo zmenené.');
+  } catch (err) { msg('dh-msg', chybaSk(err)); }
+  finally { btn.disabled = false; }
+});
+
+// ── Správa portálu (len správca; RLS to vynucuje aj na serveri) ──
+$('b-sprava').addEventListener('click', async () => { msg('ds-msg', ''); openDlg('d-sprava'); await nacitajSpravu(); });
+document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  ['t-pouz','t-apps'].forEach((t) => $(t).classList.toggle('hidden', t !== b.dataset.tab));
+}));
+
+async function nacitajSpravu() {
+  const [u, a, p] = await Promise.all([
+    S.sb.from('pouzivatelia').select('*').order('meno'),
+    S.sb.from('aplikacie').select('*').order('poradie').order('nazov'),
+    S.sb.from('pristupy').select('user_id,app_kod'),
+  ]);
+  const err = u.error || a.error || p.error;
+  if (err) { msg('ds-msg', chybaSk(err)); return; }
+  S.all = { users: u.data || [], apps: a.data || [], pristupy: p.data || [] };
+  vykresliPouz(); vykresliApps();
+}
+
+function datum(t) { if (!t) return '–'; const d = new Date(t); return d.toLocaleDateString('sk-SK') + ' ' + d.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }); }
+
+function vykresliPouz() {
+  const { users, apps, pristupy } = S.all;
+  const ma = new Set(pristupy.map((x) => x.user_id + '|' + x.app_kod));
+  const head = `<thead><tr><th>Meno</th><th>E-mail</th><th>Funkcia</th><th>Stredisko</th><th>Posledné prihlásenie</th><th>Aktívny</th><th>Správca</th>
+    ${apps.map((a) => `<th class="ap" title="${esc(a.nazov)}">${esc(a.nazov)}</th>`).join('')}<th></th></tr></thead>`;
+  const rows = users.map((u) => `<tr class="${u.aktivny ? '' : 'off'}" data-uid="${esc(u.user_id)}">
+      <td><input class="in" data-f="meno" value="${esc(u.meno)}" style="min-width:150px"></td>
+      <td class="muted">${esc(u.email)}</td>
+      <td><input class="in" data-f="funkcia" value="${esc(u.funkcia)}" style="min-width:130px"></td>
+      <td><input class="in" data-f="stredisko" value="${esc(u.stredisko)}" style="min-width:90px"></td>
+      <td class="muted" style="white-space:nowrap">${esc(datum(u.posledne_prihlasenie))}</td>
+      <td class="ap"><input type="checkbox" data-f="aktivny" ${u.aktivny ? 'checked' : ''} aria-label="Aktívny"></td>
+      <td class="ap"><input type="checkbox" data-f="je_spravca" ${u.je_spravca ? 'checked' : ''} aria-label="Správca"></td>
+      ${apps.map((a) => `<td class="ap"><input type="checkbox" data-app="${esc(a.kod)}" ${u.je_spravca ? 'checked disabled title="Správca vidí všetko"' : (ma.has(u.user_id + '|' + a.kod) ? 'checked' : '')} aria-label="${esc(a.nazov)}"></td>`).join('')}
+      <td style="white-space:nowrap"><button class="btn sm" type="button" data-act="heslo">Nové heslo</button></td>
+    </tr>`).join('');
+  $('tb-pouz').innerHTML = head + '<tbody>' + (rows || `<tr><td colspan="${8 + apps.length}" class="muted">Zatiaľ žiadni používatelia.</td></tr>`) + '</tbody>';
+}
+
+$('tb-pouz').addEventListener('change', async (e) => {
+  const tr = e.target.closest('tr[data-uid]'); if (!tr) return;
+  const uid = tr.dataset.uid, el = e.target;
+  try {
+    if (el.dataset.app) {
+      const kod = el.dataset.app;
+      const r = el.checked
+        ? await S.sb.from('pristupy').insert({ user_id: uid, app_kod: kod, pridal: S.me.user_id })
+        : await S.sb.from('pristupy').delete().eq('user_id', uid).eq('app_kod', kod);
+      if (r.error) throw r.error;
+      if (el.checked) S.all.pristupy.push({ user_id: uid, app_kod: kod });
+      else S.all.pristupy = S.all.pristupy.filter((x) => !(x.user_id === uid && x.app_kod === kod));
+      toast(el.checked ? 'Prístup pridaný.' : 'Prístup odobratý.');
+    } else if (el.dataset.f) {
+      const f = el.dataset.f;
+      let v = el.type === 'checkbox' ? el.checked : el.value.trim();
+      if (f === 'meno' && !v) { el.value = S.all.users.find((u) => u.user_id === uid)?.meno || ''; throw new Error('Meno nemôže byť prázdne'); }
+      if (f === 'funkcia' || f === 'stredisko') v = v || null;
+      const r = await S.sb.from('pouzivatelia').update({ [f]: v }).eq('user_id', uid).select().maybeSingle();
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('Zmenu sa nepodarilo uložiť');
+      const i = S.all.users.findIndex((u) => u.user_id === uid); S.all.users[i] = r.data;
+      if (uid === S.me.user_id) { S.me = r.data; vykresliHlavicku(); }
+      if (f === 'aktivny' || f === 'je_spravca') vykresliPouz();
+      toast('Uložené.');
+    }
+  } catch (err) {
+    toast(chybaSk(err), true);
+    await nacitajSpravu();           // vráti obrazovku do stavu podľa servera
+  }
+});
+
+$('tb-pouz').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-act="heslo"]'); if (!b) return;
+  const tr = b.closest('tr[data-uid]'); const u = S.all.users.find((x) => x.user_id === tr.dataset.uid);
+  const td = b.parentElement;
+  td.innerHTML = `<span style="display:inline-flex;gap:6px"><input class="in" type="text" autocomplete="off" placeholder="nové heslo" style="width:140px" data-pw>
+    <button class="btn sm pri" type="button" data-act="pw-ok">Nastaviť</button><button class="btn sm" type="button" data-act="pw-x">✕</button></span>`;
+  td.querySelector('[data-pw]').focus();
+  td.querySelector('[data-act="pw-x"]').onclick = () => vykresliPouz();
+  td.querySelector('[data-act="pw-ok"]').onclick = async () => {
+    const pw = td.querySelector('[data-pw]').value;
+    if (pw.length < 8) { toast('Heslo musí mať aspoň 8 znakov.', true); return; }
+    try { const r = await adminFn({ action: 'set_password', user_id: u.user_id, heslo: pw }); toast(`${u.meno}: ${r.message}`); vykresliPouz(); }
+    catch (err) { toast(chybaSk(err), true); }
+  };
+});
+
+async function adminFn(body) {
+  const { data } = await S.sb.auth.getSession();
+  if (!data?.session) throw new Error('Prihlásenie vypršalo. Prihláste sa znova.');
+  const res = await fetch(CFG.SUPABASE_URL + '/functions/v1/portal-admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + data.session.access_token },
+    body: JSON.stringify(body),
+  });
+  let j = {}; try { j = await res.json(); } catch (_) {}
+  if (!res.ok || j.error) throw new Error(j.error || `Chyba servera (${res.status})`);
+  return j;
+}
+
+$('f-novy').addEventListener('submit', async (e) => {
+  e.preventDefault(); msg('ds-msg', '');
+  const body = { action: 'create', email: $('n-email').value.trim(), meno: $('n-meno').value.trim(),
+    funkcia: $('n-funkcia').value.trim(), stredisko: $('n-stredisko').value.trim(), heslo: $('n-heslo').value };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) { msg('ds-msg', 'Zadajte platný e-mail.'); return; }
+  if (!body.meno) { msg('ds-msg', 'Zadajte meno a priezvisko.'); return; }
+  if (body.heslo && body.heslo.length < 8) { msg('ds-msg', 'Heslo musí mať aspoň 8 znakov.'); return; }
+  const b = $('n-ok'); b.disabled = true;
+  try {
+    const r = await adminFn(body);
+    ['n-email','n-meno','n-funkcia','n-stredisko','n-heslo'].forEach((i) => $(i).value = '');
+    msg('ds-msg', r.message + ' Teraz mu zaškrtnite aplikácie, ktoré má vidieť.', 'ok');
+    await nacitajSpravu();
+  } catch (err) { msg('ds-msg', chybaSk(err)); }
+  finally { b.disabled = false; }
+});
+
+function vykresliApps() {
+  const { apps } = S.all;
+  const sel = (name, opts, v) => `<select class="in" data-f="${name}">${opts.map(([k, t]) => `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
+  const head = `<thead><tr><th></th><th>Kód</th><th>Názov</th><th>Popis</th><th>Adresa</th><th>Skupina</th><th>Štítok</th><th>Ikona</th><th>Farba</th><th>Prihlásenie</th><th>Poradie</th><th>Zobraziť</th></tr></thead>`;
+  const rows = apps.map((a) => `<tr class="${a.aktivna ? '' : 'off'}" data-kod="${esc(a.kod)}">
+      <td><div class="ico c-${FARBY.includes(a.farba) ? a.farba : 'blue'}" style="width:34px;height:34px;border-radius:9px">${ico(a.ikona, 18)}</div></td>
+      <td class="muted">${esc(a.kod)}</td>
+      <td><input class="in" data-f="nazov" value="${esc(a.nazov)}" style="min-width:140px"></td>
+      <td><input class="in" data-f="popis" value="${esc(a.popis)}" style="min-width:220px"></td>
+      <td><input class="in" data-f="url" value="${esc(a.url)}" style="min-width:240px"></td>
+      <td>${sel('skupina', Object.entries(SKUPINY), a.skupina)}</td>
+      <td><input class="in" data-f="stitok" value="${esc(a.stitok)}" style="width:90px"></td>
+      <td>${sel('ikona', Object.keys(ICONS).map((k) => [k, k]), a.ikona)}</td>
+      <td>${sel('farba', FARBY.map((k) => [k, k]), a.farba)}</td>
+      <td>${sel('prihlasenie', [['vlastne','Vlastné'],['sso','Bez prihlásenia']], a.prihlasenie)}</td>
+      <td><input class="in" data-f="poradie" type="number" value="${esc(a.poradie)}" style="width:72px"></td>
+      <td class="ap"><input type="checkbox" data-f="aktivna" ${a.aktivna ? 'checked' : ''} aria-label="Zobraziť"></td>
+    </tr>`).join('');
+  $('tb-apps').innerHTML = head + '<tbody>' + rows + '</tbody>';
+}
+
+$('tb-apps').addEventListener('change', async (e) => {
+  const tr = e.target.closest('tr[data-kod]'); if (!tr) return;
+  const kod = tr.dataset.kod, el = e.target, f = el.dataset.f; if (!f) return;
+  let v = el.type === 'checkbox' ? el.checked : el.value.trim();
+  try {
+    if (f === 'nazov' && !v) throw new Error('Názov nemôže byť prázdny');
+    if (f === 'url' && !/^https:\/\//i.test(v)) throw new Error('Adresa musí začínať https://');
+    if (f === 'poradie') { v = parseInt(v, 10); if (!Number.isFinite(v)) throw new Error('Poradie musí byť číslo'); }
+    if (f === 'popis' || f === 'stitok') v = v || null;
+    const r = await S.sb.from('aplikacie').update({ [f]: v }).eq('kod', kod).select().maybeSingle();
+    if (r.error) throw r.error;
+    const i = S.all.apps.findIndex((a) => a.kod === kod); S.all.apps[i] = r.data;
+    if (['ikona','farba','aktivna','nazov'].includes(f)) { vykresliApps(); vykresliPouz(); }
+    toast('Uložené.');
+    await nacitajDlazdice();
+  } catch (err) { toast(chybaSk(err), true); await nacitajSpravu(); }
+});
+
+$('f-app').addEventListener('submit', async (e) => {
+  e.preventDefault(); msg('ds-msg', '');
+  const row = { kod: $('a-kod').value.trim().toLowerCase(), nazov: $('a-nazov').value.trim(), url: $('a-url').value.trim(),
+    skupina: $('a-skupina').value, poradie: (Math.max(0, ...S.all.apps.map((a) => a.poradie)) + 10) };
+  if (!/^[a-z0-9_-]{2,30}$/.test(row.kod)) { msg('ds-msg', 'Kód: 2–30 znakov, len malé písmená bez diakritiky, číslice, - a _.'); return; }
+  if (!row.nazov) { msg('ds-msg', 'Zadajte názov.'); return; }
+  if (!/^https:\/\//i.test(row.url)) { msg('ds-msg', 'Adresa musí začínať https://'); return; }
+  const b = $('a-ok'); b.disabled = true;
+  try {
+    const r = await S.sb.from('aplikacie').insert(row);
+    if (r.error) throw (/duplicate|unique/i.test(r.error.message) ? new Error('Dlaždica s týmto kódom už existuje') : r.error);
+    ['a-kod','a-nazov','a-url'].forEach((i) => $(i).value = '');
+    msg('ds-msg', `Dlaždica „${row.nazov}“ pridaná. Prideľte ju používateľom v záložke Používatelia.`, 'ok');
+    await nacitajSpravu(); await nacitajDlazdice();
+  } catch (err) { msg('ds-msg', chybaSk(err)); }
+  finally { b.disabled = false; }
+});
+
+init().catch((e) => { show('v-login'); msg('login-msg', chybaSk(e)); });
+</script>
+</body>
+</html>
